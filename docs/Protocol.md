@@ -1,5 +1,5 @@
-# General protocol for authentication, security alerts and file synchronization
-This file is the documentation of the general use protocol to be used in the eBPF agent and the server
+# Authentication and Security Protocol for eBPF Agents protocol for authentication, security alerts and file synchronization
+This file is the documentation of the general protocol to be used in the eBPF agent and the server
 
 The protocol will allow for:
 - Authenticating the agents and the server
@@ -9,12 +9,19 @@ The protocol will allow for:
 
 ## Key features and steps
 1. Agents are running on port 2222, Server is running on port 2121
+	- The agents are running first and wait for a message from the server
+	- The server runs after being told what agents are available and sends them the first message (next step)
 2. Server makes the first message and Authenticates the agent
+	- Server will authenticate the agent using the public key
 3. Agents are authenticating the server
+	- Agents will authenticate the server by the public key as well
 4. Server syncs the configuration and settings files
+	- The server makes sure that the orders the user has defined on the server side
+	are known to the agents before they start their actions
 5. Server tells the agents to start running
+	- The end of the predictable parts
 * From here the agents will pass alerts and information as needed to the server
-  and the server will send messages only for killing the agent or updating files or settings
+and the server will send messages only for killing the agent or updating files or settings
 
 
 ## Table and definitions
