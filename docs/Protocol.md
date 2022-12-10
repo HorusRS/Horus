@@ -7,7 +7,17 @@ The protocol will allow for:
 - Alerts about suspicious events
 - Synchronization of configuration files
 
-## Table
+## Key features and steps
+1. Agents are running on port 2222, Server is running on port 2121
+2. Server makes the first message and Authenticates the agent
+3. Agents are authenticating the server
+4. Server syncs the configuration and settings files
+5. Server tells the agents to start running
+* From here the agents will pass alerts and information as needed to the server
+  and the server will send messages only for killing the agent or updating files or settings
+
+
+## Table and definitions
 | Message code | Description                                                                                                                                                 | Byte structure                                       | Auth                | Alerts              | Sync                |
 |:------------:|-------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------|:-------------------:|:-------------------:|:-------------------:|
 |     0001     | Request for server public key. Sent by the eBPF agent to the Manager to request the public key that will be used to authenticate the Manager.               | m_size[4], code[1]                                   |<ul><li> [X] </li></ul>|<ul><li> [ ] </li></ul>|<ul><li> [ ] </li></ul>|
@@ -22,7 +32,7 @@ The protocol will allow for:
 |     0010     | Suspicious process termination. Sent by the Manager to the eBPF agent to request the termination of a suspicious process that has been identified.          | m_size[4], code[1], pid[4], method[n]                |<ul><li> [ ] </li></ul>|<ul><li> [X] </li></ul>|<ul><li> [ ] </li></ul>|
 |     0011     |                                                                                                                                                             |                                                      |<ul><li> [ ] </li></ul>|<ul><li> [ ] </li></ul>|<ul><li> [ ] </li></ul>|
 
-## Definitions for byte structures
+### Definitions for byte structures
 * m_size : The size of the entire message, in bytes, excluding the size of the m_size field itself (i.e. the total number of bytes in the message, minus 4 bytes).
 * code   : The message code number, which is used to identify the type of message that is being sent.
 * key    : The public key that is being exchanged as part of the authentication process.
