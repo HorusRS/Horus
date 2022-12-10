@@ -1,4 +1,12 @@
 # General protocol for authentication, security alerts and file synchronization
+This file is the documentation of the general use protocol to be used in the eBPF agent and the server
+
+The protocol will allow for:
+- Authenticating the agents and the server
+- E2E Encryption
+- Alerts about suspicious events
+- Synchronization of configuration files
+
 ## Table
 | Message code | Description                                                                                                                                                 | Byte structure                                       | Auth                | Alerts              | Sync                |
 |:------------:|-------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------|:-------------------:|:-------------------:|:-------------------:|
