@@ -12,14 +12,8 @@ pub mod toml_config{
     }
     
     // Config struct holds to data from the `[config]` section.c
-    #[derive(Deserialize)]
+    #[derive(Serialize, Deserialize)]
     pub struct Config {
-        pub alert_name: String,
-        pub pattern_type: String,
-        pub pattern_data: String,
-    }
-    #[derive(Serialize)]
-    pub struct load_config {
         pub alert_name: String,
         pub pattern_type: String,
         pub pattern_data: String,
@@ -65,7 +59,7 @@ pub mod toml_config{
         return data;
     }
     pub fn load_to_signatures(){
-        let my_struct = load_config{
+        let my_struct = Config{
             alert_name: "Anti debugging".to_string(),
             pattern_type: "systemcalls.single".to_string(),
             pattern_data: "arch_ptrace".to_string()
@@ -79,8 +73,9 @@ pub mod toml_config{
                 // Exit the program with exit code `1`.
                 exit(1);
             }
+            
         };
-        fs::write("check.toml", toml_string).unwrap();
+        fs::write("test.toml", "[config]\n".to_owned() + &toml_string).unwrap();
     }
 
 }

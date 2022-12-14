@@ -8,5 +8,5 @@ use crate::toml_config::toml_config::{load_signatures};
 fn main() {
     let sig: Signature_t = load_signatures();
     let thread = thread::spawn(move || run(sig));
-    let _res = thread.join();
+    thread.join().expect("Couldn't join on the associated thread");
 }
