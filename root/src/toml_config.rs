@@ -57,6 +57,7 @@ pub mod toml_config{
             }
         };
         return data;
+        
     }
     pub fn load_to_signatures(){
         let my_struct = Config{
