@@ -16,16 +16,19 @@ struct data_t {
 
 fn do_main(runnable: Arc<AtomicBool>, data: Signature_t) -> Result<(), BccError>{
     let code = include_str!("bpfCode.c");
-    // compile the above BPF code!
+    // compile the above BPF cod
     let mut module = BPF::new(code)?;
+
+    let sig: Signature_t = data;
+    let first_signature = &sig.config[0];
     // load + attach kprobes!
     Kprobe::new()
         .handler("trace_entry")
-        .function(&data.config.pattern_data)
+        .function(&first_signature.pattern_data)
         .attach(&mut module)?;
     Kretprobe::new()
         .handler("trace_return")
-        .function(&data.config.pattern_data)
+        .function(&first_signature.pattern_data)
         .attach(&mut module)?;
 
         // the "events" table is where the "open file" events get sent

@@ -8,7 +8,7 @@ pub mod toml_config{
     // Top level struct to hold the TOML data.
     #[derive(Deserialize)]
     pub struct Signature_t {
-        pub config: Config,
+        pub config: Vec<Config>,
     }
     
     // Config struct holds to data from the `[config]` section.c
@@ -44,20 +44,9 @@ pub mod toml_config{
         // Use a `match` block to recturn the 
         // file `contents` as a `Data struct: Ok(d)`
         // or handle any `errors: Err(_)`.
-        let data: Signature_t = match toml::from_str(&contents) {
-            // If successful, return data as `Data` struct.
-            // `d` is a local variable.
-            Ok(d) => d,
-            // Handle the `error` case.
-            Err(_) => {
-                // Write `msg` to `stderr`.
-                eprintln!("Unable to load data from `{}`", filename);
-                // Exit the program with exit code `1`.
-                exit(1);
-            }
-        };
+
+        let data: Signature_t = toml::from_str(&contents).unwrap();
         return data;
-        
     }
     pub fn load_to_signatures(){
         let my_struct = Config{
