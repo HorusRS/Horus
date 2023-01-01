@@ -16,11 +16,11 @@ struct data_t {
 
 fn do_main(runnable: Arc<AtomicBool>, data: Signature_t) -> Result<(), BccError>{
     let code = include_str!("bpfCode.c");
-    // compile the above BPF cod
+    // compile the above BPF code!
     let mut module = BPF::new(code)?;
 
     let sig: Signature_t = data;
-    let first_signature = &sig.config[0];
+    let first_signature = sig.config;
     // load + attach kprobes!
     Kprobe::new()
         .handler("trace_entry")

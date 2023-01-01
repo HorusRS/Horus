@@ -1,9 +1,9 @@
-[devices]
-	[device.main_server]
-	device_name = "Main server"
-	address = "192.168.1.47:8847"
-	patterns_to_collect = ["patterns.dt.anti-debugging", "patterns.dt.fileless-execution"]
-	[device.dev-machine]
-	device_name = "My computer"
-	address = "192.168.1.32"
-	patterns_to_collect = ["patterns.dt.fileless-execution"]
+[[devices]]
+device_name = "Main server"
+address = "192.168.1.47:8847"
+patterns_to_collect = ["patterns.dt.anti-debugging", "patterns.dt.fileless-execution"]
+
+[[devices]]
+device_name = "My computer"
+address = "192.168.1.32"
+patterns_to_collect = ["patterns.dt.fileless-execution"]

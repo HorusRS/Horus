@@ -8,7 +8,7 @@ pub mod toml_config{
     // Top level struct to hold the TOML data.
     #[derive(Deserialize)]
     pub struct Signature_t {
-        pub config: Vec<Config>,
+        pub config: Config,
     }
     
     // Config struct holds to data from the `[config]` section.c
