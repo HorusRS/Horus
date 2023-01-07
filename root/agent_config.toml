@@ -1,0 +1,9 @@
+[[signatures]]
+alert_name = "Anti debugging - tracing"
+pattern_type = "systemcalls.single"
+pattern_data = "arch_ptrace"
+
+[[signatures]]
+alert_name = "Anti debugging - not tracing"
+pattern_type = "systemcalls.single"
+pattern_data = "arch_ptrace"
