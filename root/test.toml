@@ -1,4 +1,0 @@
-[config]
-alert_name = "Anti debugging"
-pattern_type = "systemcalls.single"
-pattern_data = "arch_ptrace"

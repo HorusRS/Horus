@@ -9,7 +9,7 @@ pub mod toml_config{
 
     #[derive(Serialize, Deserialize, Debug)]
     pub struct Config_t {
-        signatures: Vec<Signature_t>,
+        pub signatures: Vec<Signature_t>,
     }
 
     #[derive(Serialize, Deserialize, Debug)]

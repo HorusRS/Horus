@@ -19,16 +19,14 @@ fn do_main(runnable: Arc<AtomicBool>, data: Signature_t) -> Result<(), BccError>
     // compile the above BPF code!
     let mut module = BPF::new(code)?;
 
-    let sig: Signature_t = data;
-    let first_signature = sig.config;
     // load + attach kprobes!
     Kprobe::new()
         .handler("trace_entry")
-        .function(&first_signature.pattern_data)
+        .function(&data.pattern_data)
         .attach(&mut module)?;
     Kretprobe::new()
         .handler("trace_return")
-        .function(&first_signature.pattern_data)
+        .function(&data.pattern_data)
         .attach(&mut module)?;
 
         // the "events" table is where the "open file" events get sent
