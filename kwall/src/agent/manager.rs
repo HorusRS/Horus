@@ -1,5 +1,7 @@
-use std::{
-	collections::HashMap,
+use {
+	std::{
+		collections::HashMap,
+	},
 };
 
 use {
@@ -7,7 +9,7 @@ use {
 };
 
 pub struct Manager {
-	pub loaded_signatures: HashMap<sig::SigName, sig::SignatureInformation>,
+	pub signatures: HashMap<sig::SigName, sig::SignatureInformation>,
 }
 
 impl Manager {
@@ -28,12 +30,12 @@ impl Manager {
 		}
 
 		Self {
-			loaded_signatures: sig_map,
+			signatures: sig_map,
 		}
 	}
 
 	pub fn prompt(&mut self) {
 		println!("Horus agent will start after this prompt:\n");
-		println!("Loaded {} signatures", self.loaded_signatures.len());
+		println!("Loaded {} signatures", self.signatures.len());
 	}
 }
