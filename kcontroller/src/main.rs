@@ -21,8 +21,8 @@ impl FromStr for RunMode {
 		}
 	}
 }
-
-fn main() {
+#[actix_web::main]
+async fn main(){
 	let matches = Command::new("kwall")
 		.about("Horus's server:
 
@@ -51,8 +51,8 @@ on any machine, this is still a work in progress:) \
 			RunMode::Local => {
 				let mut manager = server::Manager::new();
 				manager.prompt();
-				loop { // empty loop (for now)
-				}
+                let protocol = server::Protocol::new(8000);
+                protocol.start().await;
 			}
 			RunMode::Full => {
 				todo!();
