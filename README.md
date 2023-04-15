@@ -9,3 +9,10 @@ Some are dangerous like tracing programs and fileless execution, Some are stupid
 Think of it as a firewall on the kernel level. you're welcome!
 * Want to use? you'll need to wait..
 * Want to learn about it? [here](./docs/) are the docs
+
+# Just for us devs
+- run kwall?
+> `kwall run serverless`
+
+- run kcontroller?
+> `kcontroller run local`

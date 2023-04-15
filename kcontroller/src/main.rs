@@ -3,10 +3,10 @@ use {
 	std::str::FromStr,
 };
 
-mod agent;
+mod server;
 
 enum RunMode {
-	Serverless,
+	Local,
 	Full,
 }
 
@@ -15,7 +15,7 @@ impl FromStr for RunMode {
 
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
 		match s {
-			"serverless" => Ok(RunMode::Serverless),
+			"local" => Ok(RunMode::Local),
 			"full" => Ok(RunMode::Full),
 			_ => Err(format!("Invalid run mode: '{}'", s)),
 		}
@@ -24,7 +24,7 @@ impl FromStr for RunMode {
 
 fn main() {
 	let matches = Command::new("kwall")
-		.about("Horus's eBPF agent:
+		.about("Horus's server:
 
 This util is for testing purposes only and is not viable for any production use
 on any machine, this is still a work in progress:) \
@@ -33,13 +33,13 @@ on any machine, this is still a work in progress:) \
 		.author("Horus Development Team (Noam Eliyahu Daniel and Lili spapirela")
 		.subcommand(
 			Command::new("run")
-				.about("Run eBPF agent")
+				.about("Run server")
 				.arg(
 					Arg::new("mode")
 						.value_name("MODE/STATE")
-						.value_parser(["serverless", "full"])
-						.help("Select the run mode: 'serverless' or 'full'")
-						.default_value("serverless"),
+						.value_parser(["local", "full"])
+						.help("Select the run mode: 'local' or 'full'")
+						.default_value("local"),
 				),
 		)
 		.get_matches();
@@ -48,8 +48,8 @@ on any machine, this is still a work in progress:) \
 		let mode_str = matches.get_one::<String>("mode").unwrap();
 		let mode = mode_str.parse::<RunMode>().unwrap();
 		match mode {
-			RunMode::Serverless => {
-				let mut manager = agent::Manager::new();
+			RunMode::Local => {
+				let mut manager = server::Manager::new();
 				manager.prompt();
 				loop { // empty loop (for now)
 				}

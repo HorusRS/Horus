@@ -1,0 +1,40 @@
+[package]
+name = "kcontroller"
+version = "0.1.0"
+edition = "2021"
+authors = ["Noam Daniel Eliyahu", "Liam Sapir"]
+keywords = ["bcc", "kernel", "eBPF", "linux"]
+rust-version = "1.68"
+
+publish = false
+
+[registries.crates-io]
+protocol = "sparse" # will become the default from rust v1.70
+
+[dependencies]
+hrs-common = { version = "0.1.0", path = "../hrs-common" } # the *local* common crate for both agent and server
+clap = "4.2.2"
+
+[features]
+
+[profile.dev]
+opt-level = 0
+debug = true
+debug-assertions = true
+overflow-checks = true
+
+[profile.release]
+opt-level = 3
+debug = false
+codegen-units = 1 # build using only one code generation unit (fastest code..?)
+panic = 'unwind'
+lto = true
+strip = true
+
+[profile.release-no-strip]
+inherits = "release"
+strip = false
+
+[[bin]]
+name = "kcontroller"
+path = "src/main.rs"
