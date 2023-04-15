@@ -1,0 +1,49 @@
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[package]
+name = "kwall"
+version = "0.1.0"
+edition = "2021"
+authors = ["Noam Daniel Eliyahu", "Liam Sapir"]
+keywords = ["bcc", "kernel", "eBPF", "rust", "linux"]
+rust-version = "1.68"
+#build = "build.rs" # use only if add your own build.rs file
+publish = false
+#The value may also be an array of string which are registry names that are allowed to be published to.
+#publish = ["some-registry-name"]
+
+[registries.crates-io]
+protocol = "sparse" # will become the default from rust v1.70
+
+[dependencies]
+clap = "4.2.2"
+md5 = "0.7.0"
+bcc = "0.0.33"
+serde_derive = "1.0.136"
+toml = "0.7.1"
+serde = "1.0.136"
+ansi_term = "0.12.1"
+
+[features]
+
+[profile.dev]
+opt-level = 0
+debug = true
+debug-assertions = true
+overflow-checks = true
+
+[profile.release]
+opt-level = 3
+debug = false
+codegen-units = 1 # build using only one code generation unit (fastest code..?)
+panic = 'unwind'
+lto = true
+strip = true
+
+[profile.release-no-strip]
+inherits = "release"
+strip = false
+
+[[bin]]
+name = "kwall"
+path = "src/main.rs"
