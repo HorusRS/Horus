@@ -15,8 +15,16 @@ impl Manager {
 
 		// init signatures hash map
 		let mut sig_map = HashMap::new();
-		for s in sig::load_signatures("config/signatures.toml") {
-			sig_map.insert(s.name, s.info);
+		match sig::load_signatures("config/signatures.toml") {
+			Ok(signatures) => {
+				for s in signatures{
+					sig_map.insert(s.name, s.info);
+				}
+			},
+			Err(e) => {
+				println!("{}",e);
+				// no signatures added due to the failure
+			}
 		}
 
 		Self {

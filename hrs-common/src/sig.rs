@@ -26,9 +26,9 @@ struct FileContents {
 	signature: Vec<SignatureEntry>
 }
 
-pub fn load_signatures(path: &str) -> Vec<SignatureEntry> {
-	let data = config::load_config::<FileContents>(path);
-	data.signature
+pub fn load_signatures(path: &str) -> Result<Vec<SignatureEntry>, config::ConfigError> {
+	let data = config::load_config::<FileContents>(path)?;
+	Ok(data.signature)
 }
 
 pub fn write_signatures(signature: Vec<SignatureEntry>, path: &str) {
