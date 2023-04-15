@@ -26,17 +26,17 @@ fn main() {
 	let matches = Command::new("kwall")
 		.about("Horus's eBPF agent:
 
-This util is for testing purposes only and is not viable for any prudction use
+This util is for testing purposes only and is not viable for any production use
 on any machine, this is still a work in progress:) \
 ")
 		.version("0.0.1")
-		.author("Horus Development Team (Noam Eliyahu Daniel @nonoMain")
+		.author("Horus Development Team (Noam Eliyahu Daniel and Lili spapirela")
 		.subcommand(
 			Command::new("run")
-				.about("Run kwall")
+				.about("Run eBPF agent")
 				.arg(
 					Arg::new("mode")
-						.value_name("MODE")
+						.value_name("MODE/STATE")
 						.value_parser(["serverless", "full"])
 						.help("Select the run mode: 'serverless' or 'full'")
 						.default_value("serverless"),
