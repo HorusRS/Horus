@@ -3,6 +3,8 @@ use {
 	std::str::FromStr,
 };
 
+mod agent;
+
 enum RunMode {
 	Serverless,
 	Full,
@@ -47,14 +49,12 @@ on any machine, this is still a work in progress:) \
 		let mode = mode_str.parse::<RunMode>().unwrap();
 		match mode {
 			RunMode::Serverless => {
-				println!("Running kwall in serverless mode...");
-				// call the function to run kwall in serverless mode
+				let mut manager = agent::Manager::new();
+				manager.prompt();
 			}
 			RunMode::Full => {
-				println!("Running kwall in full mode...");
-				// call the function to run kwall in full mode
+				todo!();
 			}
 		}
 	}
 }
-

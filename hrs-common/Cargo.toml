@@ -1,0 +1,15 @@
+[package]
+name = "hrs-common"
+version = "0.1.0"
+edition = "2021"
+authors = ["Noam Daniel Eliyahu"]
+rust-version = "1.68"
+publish = false
+
+[registries.crates-io]
+protocol = "sparse" # will become the default from rust v1.70
+
+[dependencies]
+serde_derive = "1.0.136"
+serde = "1.0.136"
+toml = "0.7.1"

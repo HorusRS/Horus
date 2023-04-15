@@ -5,7 +5,7 @@ name = "kwall"
 version = "0.1.0"
 edition = "2021"
 authors = ["Noam Daniel Eliyahu", "Liam Sapir"]
-keywords = ["bcc", "kernel", "eBPF", "rust", "linux"]
+keywords = ["bcc", "kernel", "eBPF", "linux"]
 rust-version = "1.68"
 #build = "build.rs" # use only if add your own build.rs file
 publish = false
@@ -16,11 +16,11 @@ publish = false
 protocol = "sparse" # will become the default from rust v1.70
 
 [dependencies]
+hrs-common = { version = "0.1.0", path = "../hrs-common" } # the *local* common crate for both agent and server
 clap = "4.2.2"
 md5 = "0.7.0"
 bcc = "0.0.33"
 serde_derive = "1.0.136"
-toml = "0.7.1"
 serde = "1.0.136"
 ansi_term = "0.12.1"
 

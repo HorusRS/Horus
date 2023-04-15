@@ -1,0 +1,11 @@
+[[signature]]
+name = "Anti debugging - tracing"
+[signature.info]
+_type = "systemcalls.single.basic"
+_data = "ptrace"
+
+[[signature]]
+name = "Testing print loop"
+[signature.info]
+_type = "systemcalls.single.basic"
+_data = "kill"
