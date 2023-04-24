@@ -4,11 +4,11 @@ use {
 };
 
 // local mods
-use super::{
-	config,
-};
+use super::config;
 
 pub type SignatureHash = String;
+
+pub type Program = String;
 
 pub trait Hash {
 	fn to_output(&self) -> String;
@@ -33,10 +33,39 @@ impl Hash for SignatureHash {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum ProcessAction {
+	Kill,
+	Secomp,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum AlertBehavior {
+	Standard,
+	None,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(tag = "type", content = "content")]
+pub enum SignatureData {
+	Syscall(String),
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SignatureEntry {
-	pub _name: String,
-	pub _type: String,
-	pub _data: String,
+	pub name: String,
+	pub action: ProcessAction,
+	#[serde(default = "default_alert")]
+	pub alert: AlertBehavior,
+	pub data: SignatureData,
+	#[serde(default = "default_whitelist")]
+	pub whitelist: Option<Vec<Program>>,
+}
+
+fn default_alert() -> AlertBehavior {
+	AlertBehavior::Standard
+}
+fn default_whitelist() -> Option<Vec<Program>> {
+	None
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -49,9 +78,9 @@ pub fn load_signatures(path: &str) -> Result<Vec<SignatureEntry>, config::Config
 	Ok(data.signature)
 }
 
-pub fn write_signatures(signature: Vec<SignatureEntry>, path: &str) {
+pub fn write_signatures(signature: Vec<SignatureEntry>, path: &str) -> Result<(), config::ConfigError> {
 	let data = FileContents {
 		signature,
 	};
-	config::write_config::<FileContents>(data, path);
+	config::write_config::<FileContents>(&data, path)
 }

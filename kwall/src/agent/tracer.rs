@@ -10,8 +10,6 @@ use {
 		},
 	},
 	std::{
-		thread,
-		sync::Arc,
 		ptr,
 		collections::HashMap,
 	},
@@ -24,13 +22,12 @@ use {
 	},
 };
 
+
 #[repr(C)]
-#[derive(Debug)]
-struct ProcData {
-	id: u64,
-	ts: u64,
-	ret: isize,
-	comm: [u8; 16], // TASK_COMM_LEN
+struct data_t {
+    id: u32,
+    ret: isize,
+    comm: [u8; 16],   // TASK_COMM_LEN
 }
 
 pub struct Tracer {
@@ -48,16 +45,15 @@ impl Tracer {
 		}
 	}
 
-	pub fn run_signatures(&mut self, signatures: &HashMap<sig::SignatureHash, sig::SignatureEntry>) -> Result<(), BccError> {
+	pub fn run_signatures(&mut self, signatures: &HashMap<sig::SignatureHash, sig::SignatureEntry>) {
 		for (sig_hash, sig) in signatures {
 			run_signature(sig_hash, sig);
 		}
-		Ok(())
 	}
 
 }
 
-fn run_signature(sig_hash: &sig::SignatureHash, sig: &sig::SignatureEntry) -> thread::JoinHandle<()> {
+fn run_signature(sig_hash: &sig::SignatureHash, sig: &sig::SignatureEntry) {
 	let mut module = BPF::new(generate_bpf_c_block_for_sig_hash(sig_hash, sig).as_str())
 		.expect("Can't compile eBPF");
 	let kernel_function_name = module.get_syscall_fnname(sig._data.as_str());
@@ -79,11 +75,9 @@ fn run_signature(sig_hash: &sig::SignatureHash, sig: &sig::SignatureEntry) -> th
 	println!("{:-7} {:-16} ", "PID", "COMM");
 	// this `.poll()` loop is what makes our callback get called
 	// perf_map.poll(200);
-	thread::spawn(move || {
-		loop {
-			perf_map.poll(200);
-		}
-	})
+	loop {
+		perf_map.poll(200);
+	}
 }
 
 fn perf_data_callback() -> Box<dyn FnMut(&[u8]) + Send> {
@@ -92,7 +86,7 @@ fn perf_data_callback() -> Box<dyn FnMut(&[u8]) + Send> {
 		let data = bytes_to_proc_data(x);
 		println!(
 			"{:-7} {:-16}",
-			data.id >> 32,
+			data.id,
 			bytes_to_string(&data.comm),
 		);
 	})
@@ -121,6 +115,6 @@ fn bytes_to_string(x: &[u8]) -> String {
 	}
 }
 
-fn bytes_to_proc_data(x: &[u8]) -> ProcData {
-	unsafe { ptr::read_unaligned(x.as_ptr() as *const ProcData) }
+fn bytes_to_proc_data(x: &[u8]) -> data_t {
+	unsafe { ptr::read_unaligned(x.as_ptr() as *const data_t) }
 }

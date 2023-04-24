@@ -11,13 +11,15 @@ use {
 #[derive(Debug)]
 pub enum ConfigError {
 	FailedToRead(io::Error),
+	FailedToWrite(io::Error),
 	InvalidFormat(toml::de::Error),
 }
 
 impl std::fmt::Display for ConfigError {
 	fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
 		match self {
-			ConfigError::FailedToRead(e) => write!(f, "File not found: {}", e),
+			ConfigError::FailedToRead(e) => write!(f, "File cannot be read from: {}", e),
+			ConfigError::FailedToWrite(e) => write!(f, "File cannot be written to: {}", e),
 			ConfigError::InvalidFormat(e) => write!(f, "Invalid file format: {}", e),
 		}
 	}
@@ -42,10 +44,12 @@ where for<'a> T: Deserialize<'a>
 	Ok(data)
 }
 
-// saves given config to file
-pub fn write_config<T>(data: T, path: &str)
-where T: Serialize
+pub fn write_config<T>(data: &T, path: &str) -> Result<(), ConfigError>
+where T: Serialize,
 {
 	let toml_str = toml::to_string(&data).unwrap();
-	fs::write(path, String::new() + &toml_str).unwrap();
+	match fs::write(path, toml_str) {
+		Ok(()) => Ok(()),
+		Err(e) => Err(ConfigError::FailedToWrite(e)),
+	}
 }
