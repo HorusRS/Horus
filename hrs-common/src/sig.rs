@@ -74,14 +74,14 @@ struct FileContents {
 	signature: Vec<SignatureEntry>
 }
 
-pub fn load_signatures(path: &str) -> Result<Vec<SignatureEntry>, config::ObjFileError> {
-	let data = config::load::<FileContents>(path, config::ObjFileFormat::Toml)?;
+pub fn load_signatures(path: &str) -> Result<Vec<SignatureEntry>, objfile::ObjFileError> {
+	let data = objfile::load::<FileContents>(path, objfile::ObjFileFormat::Toml)?;
 	Ok(data.signature)
 }
 
-pub fn write_signatures(signature: Vec<SignatureEntry>, path: &str) -> Result<(), config::ObjFileError> {
+pub fn write_signatures(signature: Vec<SignatureEntry>, path: &str) -> Result<(), objfile::ObjFileError> {
 	let data = FileContents {
 		signature,
 	};
-	config::write::<FileContents>(&data, path, config::ObjFileFormat::Toml)
+	objfile::write::<FileContents>(&data, path, objfile::ObjFileFormat::Toml)
 }

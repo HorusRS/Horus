@@ -1,9 +1,5 @@
 use {
 	serde_derive::{Deserialize, Serialize},
-	chrono::{
-		DateTime,
-		Utc,
-	},
 };
 
 // local mods
