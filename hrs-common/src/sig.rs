@@ -4,11 +4,12 @@ use {
 };
 
 // local mods
-use super::config;
+use super::objfile;
+use super::program::{
+	Program
+};
 
 pub type SignatureHash = String;
-
-pub type Program = String;
 
 pub trait Hash {
 	fn to_output(&self) -> String;
@@ -73,14 +74,14 @@ struct FileContents {
 	signature: Vec<SignatureEntry>
 }
 
-pub fn load_signatures(path: &str) -> Result<Vec<SignatureEntry>, config::ConfigError> {
-	let data = config::load_config::<FileContents>(path)?;
+pub fn load_signatures(path: &str) -> Result<Vec<SignatureEntry>, config::ObjFileError> {
+	let data = config::load::<FileContents>(path, config::ObjFileFormat::Toml)?;
 	Ok(data.signature)
 }
 
-pub fn write_signatures(signature: Vec<SignatureEntry>, path: &str) -> Result<(), config::ConfigError> {
+pub fn write_signatures(signature: Vec<SignatureEntry>, path: &str) -> Result<(), config::ObjFileError> {
 	let data = FileContents {
 		signature,
 	};
-	config::write_config::<FileContents>(&data, path)
+	config::write::<FileContents>(&data, path, config::ObjFileFormat::Toml)
 }
