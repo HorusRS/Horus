@@ -30,7 +30,7 @@ This util is for testing purposes only and is not viable for any production use
 on any machine, this is still a work in progress:) \
 ")
 		.version("0.1.0")
-		.author("Horus Development Team (Noam Eliyahu Daniel and Lili spapirela")
+		.author("Horus Development Team (Noam Eliyahu Daniel and Liam Sapir")
 		.subcommand(
 			Command::new("run")
 				.about("Run eBPF agent")
