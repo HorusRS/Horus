@@ -13,7 +13,6 @@ use {
 
 pub struct Manager {
 	pub signatures: HashMap<sig::SignatureHash, sig::SignatureEntry>,
-	tracer: tracer::Tracer,
 }
 
 impl Manager {
@@ -32,7 +31,6 @@ impl Manager {
 
 		Self {
 			signatures: sig_map,
-			tracer: tracer::Tracer::new(),
 		}
 	}
 
@@ -43,6 +41,6 @@ impl Manager {
 	}
 
 	pub fn load(&mut self) {
-		self.tracer.load_signatures(&self.signatures)
+		tracer::run_signatures(&self.signatures)
 	}
 }
