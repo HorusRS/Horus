@@ -14,15 +14,11 @@ struct data_t {
 	char pcomm[TASK_COMM_LEN];
 };
 
-struct counter_t {
-	char count;
-};
-
-BPF_HASH(counters, u32, struct counter_t);
-
-BPF_HASH(infotmp, u32, struct data_t);
+BPF_HASH(placeholder_of_count, u32, char);
+BPF_HASH(placeholder_of_infotmp, u32, struct data_t);
 BPF_PERF_OUTPUT(placeholder_of_bpf_perf);
-int placeholder_of_entry_probe_handler(struct pt_regs *ctx)
+
+int placeholder_of_entry_handler(struct pt_regs *ctx)
 {
 	u64 ts = bpf_ktime_get_boot_ns();
 	struct data_t data = {};
@@ -35,20 +31,20 @@ int placeholder_of_entry_probe_handler(struct pt_regs *ctx)
 	data.ret = 0; // this return value will be overriden
 	bpf_probe_read_kernel(&data.comm, sizeof(data.comm), task->comm);
 	bpf_probe_read_kernel(&data.pcomm, sizeof(data.pcomm), task->real_parent->comm);
-	infotmp.update(&pid, &data);
+	placeholder_of_infotmp.update(&pid, &data);
 
 	// this will be based on the Alert type of the signature
 	placeholder_of_action
 	return 0;
-};
-int placeholder_of_return_probe_handler(struct pt_regs *ctx)
+}
+int placeholder_of_return_handler(struct pt_regs *ctx)
 {
 	// we get just the pid instead of the whole task struct because
-	// the needed info is stored in the `infotmp` table
+	// the needed info is stored in the `placeholder_of_infotmp` table
 	u32 pid = bpf_get_current_pid_tgid() >> 32; // PID is higher part
 	struct data_t *datap;
 	struct data_t data = {};
-	datap = infotmp.lookup(&pid);
+	datap = placeholder_of_infotmp.lookup(&pid);
 	if (datap == 0) {
 		// missed entry
 		return 0;
@@ -61,6 +57,6 @@ int placeholder_of_return_probe_handler(struct pt_regs *ctx)
 	data.ret = PT_REGS_RC(ctx);
 	// this will be based on the Alert type of the signature
 	placeholder_of_perf_alert
-	infotmp.delete(&pid);
+	placeholder_of_infotmp.delete(&pid);
 	return 0;
 }

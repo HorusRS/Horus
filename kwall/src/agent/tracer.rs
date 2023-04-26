@@ -49,10 +49,11 @@ impl Tracer {
 		}
 	}
 
-	pub fn run_signatures(&mut self, signatures: &HashMap<sig::SignatureHash, sig::SignatureEntry>) {
+	pub fn load_signatures(&mut self, signatures: &HashMap<sig::SignatureHash, sig::SignatureEntry>) {
 		for (sig_hash, sig) in signatures {
 			ebpf::run_signature(sig_hash, sig);
 		}
 	}
+
 
 }

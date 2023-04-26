@@ -58,12 +58,17 @@ pub enum SignatureData {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SignatureEntry {
 	pub name: String,
+	#[serde(default = "default_action")]
 	pub action: Action,
 	#[serde(default = "default_alert")]
 	pub alert: AlertBehavior,
 	pub data: SignatureData,
 	#[serde(default = "default_whitelist")]
 	pub whitelist: Option<Vec<Program>>,
+}
+
+fn default_action() -> Action {
+	Action::None
 }
 
 fn default_alert() -> AlertBehavior {

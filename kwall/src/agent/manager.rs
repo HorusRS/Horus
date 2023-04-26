@@ -36,12 +36,13 @@ impl Manager {
 		}
 	}
 
-	pub fn prompt(&mut self) {
+	pub fn prompt(&self) {
 		println!("Horus agent will start after this prompt:\n");
 		println!("Loaded {} signatures", self.signatures.len());
 		println!("{:?}", self.signatures);
-		match self.tracer.run_signatures(&self.signatures) {
-			_ => print!(""),
-		};
+	}
+
+	pub fn load(&mut self) {
+		self.tracer.load_signatures(&self.signatures)
 	}
 }

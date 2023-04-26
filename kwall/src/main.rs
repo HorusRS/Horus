@@ -51,7 +51,8 @@ on any machine, this is still a work in progress:) \
 			RunMode::Serverless => {
 				let mut manager = agent::Manager::new();
 				manager.prompt();
-				loop { // empty loop (for now)
+				manager.load();
+				loop {
 				}
 			}
 			RunMode::Full => {

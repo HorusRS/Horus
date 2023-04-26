@@ -15,14 +15,9 @@ struct data_t {
 	char fname[256]; // NAME_MAX
 };
 
-struct counter_t {
-	char count;
-};
-
-BPF_HASH(counters, u32, struct counter_t);
-BPF_HASH(tracepoint_actions, u32, char);
-
-BPF_HASH(infotmp, u32, struct data_t);
+BPF_HASH(placeholder_of_count, u32, char);
+// BPF_HASH(tracepoint_actions, u32, char);
+BPF_HASH(placeholder_of_infotmp, u32, struct data_t);
 BPF_PERF_OUTPUT(placeholder_of_bpf_perf);
 
 int placeholder_of_entry_handler(struct tracepoint__syscalls__sys_enter_openat *args)
@@ -41,7 +36,7 @@ int placeholder_of_entry_handler(struct tracepoint__syscalls__sys_enter_openat *
 	bpf_probe_read_user_str(&data.fname, sizeof(data.fname), (void *)filename);
 	bpf_probe_read_kernel(&data.comm, sizeof(data.comm), task->comm);
 	bpf_probe_read_kernel(&data.pcomm, sizeof(data.pcomm), task->real_parent->comm);
-	infotmp.update(&pid, &data);
+	placeholder_of_infotmp.update(&pid, &data);
 
 	placeholder_of_action
 	return 0;
@@ -49,11 +44,11 @@ int placeholder_of_entry_handler(struct tracepoint__syscalls__sys_enter_openat *
 int placeholder_of_return_handler(struct tracepoint__syscalls__sys_exit_openat *args)
 {
 	// we get just the pid instead of the whole task struct because
-	// the needed info is stored in the `infotmp` table
+	// the needed info is stored in the `placeholder_of_infotmp` table
 	u32 pid = bpf_get_current_pid_tgid() >> 32; // PID is higher part
 	struct data_t *datap;
 	struct data_t data = {};
-	datap = infotmp.lookup(&pid);
+	datap = placeholder_of_infotmp.lookup(&pid);
 	if (datap == 0) {
 		// missed entry
 		return 0;
@@ -67,7 +62,7 @@ int placeholder_of_return_handler(struct tracepoint__syscalls__sys_exit_openat *
 	data.ret = args->ret;
 	// this will be based on the Alert type of the signature
 	placeholder_of_perf_alert
-	infotmp.delete(&pid);
+	placeholder_of_infotmp.delete(&pid);
 	return 0;
 }
 

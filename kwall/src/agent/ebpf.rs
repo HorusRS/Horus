@@ -13,6 +13,11 @@ use {
 		},
 	},
 	std::{
+		sync::{
+			Arc,
+			Mutex,
+		},
+		thread,
 		fs,
 		ptr,
 		collections::HashMap,
@@ -80,6 +85,24 @@ pub fn run_signature(sig_hash: &sig::SignatureHash, sig: &sig::SignatureEntry) {
 		SignatureData::FileAccess(fnames) => run_fileaccess_signature(sig_hash, sig, fnames), // fname -> file name
 	};
 }
+/*
+pub fn run_signature(sig_hash: &sig::SignatureHash, sig: &sig::SignatureEntry) {
+	match &sig.data {
+		SignatureData::Syscall(fname) => {
+			let sig_hash = sig_hash.clone();
+			let sig = sig.clone();
+			let fname = fname.clone();
+			thread::spawn(move || run_syscall_signature(&sig_hash, &sig, &fname));
+		}
+		SignatureData::FileAccess(fnames) => {
+			let sig_hash = sig_hash.clone();
+			let sig = sig.clone();
+			let fnames = fnames.clone();
+			thread::spawn(move || run_fileaccess_signature(&sig_hash, &sig, &fnames));
+		}
+	};
+}
+*/
 
 fn run_syscall_signature(sig_hash: &sig::SignatureHash, sig: &sig::SignatureEntry, fname: &str) {
 	let mut module = BPF::new(generate_bpf_for_syscall_signature(sig_hash, sig).as_str())
@@ -96,19 +119,19 @@ fn run_syscall_signature(sig_hash: &sig::SignatureHash, sig: &sig::SignatureEntr
 		.attach(&mut module)
 		.expect("Can't attach kretprobe");
 
-	// this table is the way to get data back from the probe
-	let table = module.table(&sig_hash.to_output()).unwrap();
-	let mut perf_map = PerfMapBuilder::new(table, generate_callback_function(sig)).build().unwrap();
-	// print a header
-	println!("{} {} => {}",
-			format!("[{:-25} | {:-25}]", "       Alert name", "  date+time (ISO 8601)").truecolor(128, 128, 128),
-			format!("{:-7} -> {:-20}", "  PPID", "PCMDLINE").blue(),
-			format!("{:-7} -> {:-20}", "  PID", "CMDLINE").red(),
-			);
-	// this `.poll()` loop is what makes our callback get called
-	loop {
-		perf_map.poll(200);
-	}
+	let module = Arc::new(Mutex::new(module));
+	let module_clone = Arc::clone(&module);
+	let sig_hash = sig_hash.clone();
+	let sig = sig.clone();
+	thread::spawn(move || {
+		// this table is the way to get data back from the probe
+		let table = module_clone.lock().unwrap().table(&sig_hash.to_output()).unwrap();
+		// this `.poll()` loop is what makes our callback get called
+		let mut perf_map = PerfMapBuilder::new(table, generate_callback_function(&sig)).build().unwrap();
+		loop {
+			perf_map.poll(200);
+		}
+	});
 }
 
 fn run_fileaccess_signature(sig_hash: &sig::SignatureHash, sig: &sig::SignatureEntry, fnames: &Vec<String>) {
@@ -127,19 +150,19 @@ fn run_fileaccess_signature(sig_hash: &sig::SignatureHash, sig: &sig::SignatureE
 		.attach(&mut module)
 		.expect("Can't attach kretprobe");
 
-	// this table is the way to get data back from the probe
-	let table = module.table(&sig_hash.to_output()).unwrap();
-	let mut perf_map = PerfMapBuilder::new(table, generate_callback_function(sig)).build().unwrap();
-	// print a header
-	println!("{} {} => {}",
-			format!("[{:-25} | {:-25}]", "       Alert name", "  date+time (ISO 8601)").truecolor(128, 128, 128),
-			format!("{:-7} -> {:-20}", "  PPID", "PCMDLINE").blue(),
-			format!("{:-7} -> {:-20}", "  PID", "CMDLINE").red(),
-			);
-	// this `.poll()` loop is what makes our callback get called
-	loop {
-		perf_map.poll(200);
-	}
+	let module = Arc::new(Mutex::new(module));
+	let module_clone = Arc::clone(&module);
+	let sig_hash = sig_hash.clone();
+	let sig = sig.clone();
+	thread::spawn(move || {
+		// this table is the way to get data back from the probe
+		let table = module_clone.lock().unwrap().table(&sig_hash.to_output()).unwrap();
+		// this `.poll()` loop is what makes our callback get called
+		let mut perf_map = PerfMapBuilder::new(table, generate_callback_function(&sig)).build().unwrap();
+		loop {
+			perf_map.poll(200);
+		}
+	});
 }
 
 fn generate_callback_function(sig: &SignatureEntry) -> impl Fn() -> Box<dyn FnMut(&[u8]) + Send> {
@@ -256,7 +279,10 @@ fn generate_bpf_for_syscall_signature(sig_hash: &SignatureHash, sig: &SignatureE
 	// replace basic (entry, return, bpf_perf) placeholders last
 	code = code.replace("placeholder_of_bpf_perf", &sig_hash.to_output())
 			.replace("placeholder_of_entry_handler", &sig_hash.to_handle("kprobe"))
-			.replace("placeholder_of_return_handler", &sig_hash.to_handle("kretprobe"));
+			.replace("placeholder_of_return_handler", &sig_hash.to_handle("kretprobe"))
+			.replace("placeholder_of_infotmp", &sig_hash.to_handle("infotmp_table"))
+			.replace("placeholder_of_count", &sig_hash.to_handle("count_table"));
+	println!("{}", code);
 	code
 }
 
@@ -293,7 +319,9 @@ fn generate_bpf_for_fileaccess_signature(sig_hash: &SignatureHash, sig: &Signatu
 	// replace basic (entry, return, bpf_perf) placeholders last
 	code = code.replace("placeholder_of_bpf_perf", &sig_hash.to_output())
 			.replace("placeholder_of_entry_handler", &sig_hash.to_handle("entry_tracepoint"))
-			.replace("placeholder_of_return_handler", &sig_hash.to_handle("exit_tracepoint"));
+			.replace("placeholder_of_return_handler", &sig_hash.to_handle("exit_tracepoint"))
+			.replace("placeholder_of_infotmp", &sig_hash.to_handle("infotmp_table"))
+			.replace("placeholder_of_count", &sig_hash.to_handle("count_table"));
 	println!("{}", code);
 	code
 }
