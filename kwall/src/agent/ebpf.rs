@@ -4,6 +4,7 @@ use {
 	bcc::{
 		Kprobe,
 		Kretprobe,
+		Tracepoint,
 		BPF,
 		// BccError,
 		perf_event::{
@@ -43,6 +44,7 @@ use {
 		sig,
 		sig::{
 			SignatureEntry,
+			SignatureHash,
 			Hash,
 			SignatureData,
 			Action,
@@ -69,7 +71,75 @@ struct FileAccess_data_t {
 	ret: c_int,
 	comm: [u8; 16],   // TASK_COMM_LEN
 	pcomm: [u8; 16],   // TASK_COMM_LEN
-	fname: [u8; 256],   // FILENAME_LEN
+	fname: [u8; 256],   // NAME_MAX
+}
+
+pub fn run_signature(sig_hash: &sig::SignatureHash, sig: &sig::SignatureEntry) {
+	match &sig.data {
+		SignatureData::Syscall(fname) => run_syscall_signature(sig_hash, sig, fname), // fname -> function name
+		SignatureData::FileAccess(fnames) => run_fileaccess_signature(sig_hash, sig, fnames), // fname -> file name
+	};
+}
+
+fn run_syscall_signature(sig_hash: &sig::SignatureHash, sig: &sig::SignatureEntry, fname: &str) {
+	let mut module = BPF::new(generate_bpf_for_syscall_signature(sig_hash, sig).as_str())
+		.expect("Can't compile eBPF");
+	let kernel_function_name = module.get_syscall_fnname(fname);
+	Kprobe::new()
+		.handler(&sig_hash.to_handle("kprobe"))
+		.function(&kernel_function_name)
+		.attach(&mut module)
+		.expect("Can't attach kprobe");
+	Kretprobe::new()
+		.handler(&sig_hash.to_handle("kretprobe"))
+		.function(&kernel_function_name)
+		.attach(&mut module)
+		.expect("Can't attach kretprobe");
+
+	// this table is the way to get data back from the probe
+	let table = module.table(&sig_hash.to_output()).unwrap();
+	let mut perf_map = PerfMapBuilder::new(table, generate_callback_function(sig)).build().unwrap();
+	// print a header
+	println!("{} {} => {}",
+			format!("[{:-25} | {:-25}]", "       Alert name", "  date+time (ISO 8601)").truecolor(128, 128, 128),
+			format!("{:-7} -> {:-20}", "  PPID", "PCMDLINE").blue(),
+			format!("{:-7} -> {:-20}", "  PID", "CMDLINE").red(),
+			);
+	// this `.poll()` loop is what makes our callback get called
+	loop {
+		perf_map.poll(200);
+	}
+}
+
+fn run_fileaccess_signature(sig_hash: &sig::SignatureHash, sig: &sig::SignatureEntry, fnames: &Vec<String>) {
+	let mut module = BPF::new(generate_bpf_for_fileaccess_signature(sig_hash, sig, fnames).as_str())
+		.expect("Can't compile eBPF");
+	Tracepoint::new()
+		.handler(&sig_hash.to_handle("entry_tracepoint"))
+		.subsystem("syscalls")
+		.tracepoint("sys_enter_openat")
+		.attach(&mut module)
+		.expect("Can't attach kprobe");
+	Tracepoint::new()
+		.handler(&sig_hash.to_handle("exit_tracepoint"))
+		.subsystem("syscalls")
+		.tracepoint("sys_exit_openat")
+		.attach(&mut module)
+		.expect("Can't attach kretprobe");
+
+	// this table is the way to get data back from the probe
+	let table = module.table(&sig_hash.to_output()).unwrap();
+	let mut perf_map = PerfMapBuilder::new(table, generate_callback_function(sig)).build().unwrap();
+	// print a header
+	println!("{} {} => {}",
+			format!("[{:-25} | {:-25}]", "       Alert name", "  date+time (ISO 8601)").truecolor(128, 128, 128),
+			format!("{:-7} -> {:-20}", "  PPID", "PCMDLINE").blue(),
+			format!("{:-7} -> {:-20}", "  PID", "CMDLINE").red(),
+			);
+	// this `.poll()` loop is what makes our callback get called
+	loop {
+		perf_map.poll(200);
+	}
 }
 
 fn generate_callback_function(sig: &SignatureEntry) -> impl Fn() -> Box<dyn FnMut(&[u8]) + Send> {
@@ -99,12 +169,8 @@ fn generate_callback_function(sig: &SignatureEntry) -> impl Fn() -> Box<dyn FnMu
 								format!("{:-7} -> {:-20}", data.ppid, pcommand).blue(),
 								format!("{:-7} -> {:-20}", data.pid, command).red(),
 								);
+
 			println!("{}", entry);
-			if let SignatureData::FileAccess(_) = &sig.data {
-				let file_access_data = bytes_to_data::<FileAccess_data_t>(x);
-				let fname = bytes_to_string(&file_access_data.fname);
-				println!("File: {}", fname)
-			}
 			if let SignatureData::Syscall(syscall) = &sig.data {
 				if let Action::Seccomp = &sig.action {
 					// needed this override option to perform seccomp
@@ -121,12 +187,33 @@ fn generate_callback_function(sig: &SignatureEntry) -> impl Fn() -> Box<dyn FnMu
 	}
 }
 
+fn generate_fileaccess_statement(fnames: &Vec<String>) -> String {
+	let mut fname_blocks = Vec::new();
+	for fname in fnames {
+		fname_blocks.push(include_str!("resources/bpf/detect/file.c").to_string()
+						.replace("placeholder_for_sign", "==") // fileaccess -> operate if a file matches
+						.replace("placeholder_for_fname", fname));
+	}
+
+	let whitelist_ifs = fname_blocks.join(" || ");
+
+	include_str!("resources/bpf/statement/if.c").to_string()
+		.replace("placeholder_of_statement", &whitelist_ifs)
+		.replace("placeholder_of_true", "placeholder_of_fileaccess_true")
+}
+
+fn surround_in_fileaccess_statement(fileaccess_statement: &str, snippet: &str) -> String {
+	fileaccess_statement.to_string()
+		.replace("placeholder_of_fileaccess_true", snippet)
+}
+
 fn generate_whitelist_statement(programs: &Option<Vec<String>>) -> String {
 	match programs {
 		Some(programs) => {
 			let mut whitelist_blocks = Vec::new();
 			for program in programs {
-				whitelist_blocks.push(include_str!("resources/bpf/whitelist/comm.c").to_string()
+				whitelist_blocks.push(include_str!("resources/bpf/detect/comm.c").to_string()
+								.replace("placeholder_for_sign", "!=") // whitelisting -> operate if the command *doesn't* match
 								.replace("placeholder_for_comm", program));
 			}
 
@@ -145,18 +232,15 @@ fn surround_in_whitelist_statement(whitelist_statement: &str, snippet: &str) -> 
 		.replace("placeholder_of_whitelist_false", snippet)
 }
 
-fn generate_bpf_block_for_signature(sig_hash: &sig::SignatureHash, sig: &sig::SignatureEntry) -> String {
-	let mut code = match &sig.data {
-		SignatureData::Syscall(_) => include_str!("resources/bpf/kprobe/Syscall.c").to_string(),
-		SignatureData::FileAccess(_) => include_str!("resources/bpf/kprobe/FileAccess.c").to_string(),
-	};
+fn generate_bpf_for_syscall_signature(sig_hash: &SignatureHash, sig: &SignatureEntry) -> String {
+	let mut code = include_str!("resources/bpf/block/kprobe/Syscall.c").to_string();
 	// generate whitelist (if exists) before anything else in order to make sure they get whitelisted
 	let whitelist = generate_whitelist_statement(&sig.whitelist);
 	// insert alert command based on alert type inside whitelist block
 	// replace action placeholder into an action placeholder placed inside whitelist
 	code = match &sig.action {
 		Action::Block => code.replace("placeholder_of_action",
-							&surround_in_whitelist_statement(&whitelist, include_str!("resources/bpf/action/block.c"))),
+							&surround_in_whitelist_statement(&whitelist, include_str!("resources/bpf/action/kprobe/block.c"))),
 		Action::Kill => code.replace("placeholder_of_action",
 							&surround_in_whitelist_statement(&whitelist, include_str!("resources/bpf/action/kill.c"))),
 		Action::Seccomp => code.replace("placeholder_of_action", ""), // seccomp isn't performed inside the eBPF
@@ -164,50 +248,54 @@ fn generate_bpf_block_for_signature(sig_hash: &sig::SignatureHash, sig: &sig::Si
 	};
 	code = match &sig.alert {
 		AlertBehavior::Single => code.replace("placeholder_of_perf_alert",
-									&surround_in_whitelist_statement(&whitelist, include_str!("resources/bpf/perf/alert.single.c"))),
-		_ => code.replace("placeholder_of_perf_alert",
-				&surround_in_whitelist_statement(&whitelist, include_str!("resources/bpf/perf/alert.default.c"))),
+							&surround_in_whitelist_statement(&whitelist, include_str!("resources/bpf/perf/kprobe/alert.single.c"))),
+		AlertBehavior::Standard => code.replace("placeholder_of_perf_alert",
+				&surround_in_whitelist_statement(&whitelist, include_str!("resources/bpf/perf/kprobe/alert.default.c"))),
+		AlertBehavior::None => code.replace("placeholder_of_perf_alert", ""),
 	};
 	// replace basic (entry, return, bpf_perf) placeholders last
 	code = code.replace("placeholder_of_bpf_perf", &sig_hash.to_output())
-			.replace("placeholder_of_entry_probe_handler", &sig_hash.to_handle("kprobe"))
-			.replace("placeholder_of_return_probe_handler", &sig_hash.to_handle("kretprobe"));
-	println!("{}", code);
-	return code;
+			.replace("placeholder_of_entry_handler", &sig_hash.to_handle("kprobe"))
+			.replace("placeholder_of_return_handler", &sig_hash.to_handle("kretprobe"));
+	code
 }
 
-pub fn run_signature(sig_hash: &sig::SignatureHash, sig: &sig::SignatureEntry) {
-	let mut module = BPF::new(generate_bpf_block_for_signature(sig_hash, sig).as_str())
-		.expect("Can't compile eBPF");
-	let kernel_function_name = match &sig.data {
-		SignatureData::Syscall(fname) => module.get_syscall_fnname(fname.as_str()),
-		SignatureData::FileAccess(_) => module.get_syscall_fnname("openat"),
-		_ => String::from(""),
+fn generate_bpf_for_fileaccess_signature(sig_hash: &SignatureHash, sig: &SignatureEntry, fnames: &Vec<String>) -> String {
+	let mut code = include_str!("resources/bpf/block/tracepoint/FileAccess.c").to_string();
+	// generate whitelist (if exists) before anything else in order to make sure they get whitelisted
+	let whitelist = generate_whitelist_statement(&sig.whitelist);
+	let fileaccess = generate_fileaccess_statement(fnames);
+	// insert alert command based on alert type inside whitelist block
+	// replace action placeholder into an action placeholder placed inside whitelist
+	code = match &sig.action {
+		Action::Block => code.replace("placeholder_of_action",
+							&surround_in_whitelist_statement(&whitelist,
+							&surround_in_fileaccess_statement(&fileaccess,
+							include_str!("resources/bpf/action/tracepoint/block.c")))),
+		Action::Kill => code.replace("placeholder_of_action",
+							&surround_in_whitelist_statement(&whitelist,
+							&surround_in_fileaccess_statement(&fileaccess,
+							include_str!("resources/bpf/action/kill.c")))),
+		Action::Seccomp => code.replace("placeholder_of_action", ""), // seccomp isn't performed inside the eBPF
+		Action::None => code.replace("placeholder_of_action", ""), // None will do nothing:)
 	};
-	Kprobe::new()
-		.handler(&sig_hash.to_handle("kprobe"))
-		.function(&kernel_function_name)
-		.attach(&mut module)
-		.expect("Can't attach kprobe");
-	Kretprobe::new()
-		.handler(&sig_hash.to_handle("kretprobe"))
-		.function(&kernel_function_name)
-		.attach(&mut module)
-		.expect("Can't attach kretprobe");
-
-	// this table is the way to get data back from the probe
-	let table = module.table(&sig_hash.to_output()).unwrap();
-	let mut perf_map = PerfMapBuilder::new(table, generate_callback_function(sig)).build().unwrap();
-	// print a header
-	println!("{} {} => {}",
-			format!("[{:-25} | {:-25}]", "       Alert name", "  date+time (ISO 8601)").truecolor(128, 128, 128),
-			format!("{:-7} -> {:-20}", "  PPID", "PCMDLINE").blue(),
-			format!("{:-7} -> {:-20}", "  PID", "CMDLINE").red(),
-			);
-	// this `.poll()` loop is what makes our callback get called
-	loop {
-		perf_map.poll(200);
-	}
+	code = match &sig.alert {
+		AlertBehavior::Single => code.replace("placeholder_of_perf_alert",
+							&surround_in_whitelist_statement(&whitelist,
+							&surround_in_fileaccess_statement(&fileaccess,
+							include_str!("resources/bpf/perf/tracepoint/alert.single.c")))),
+		AlertBehavior::Standard => code.replace("placeholder_of_perf_alert",
+							&surround_in_whitelist_statement(&whitelist,
+							&surround_in_fileaccess_statement(&fileaccess,
+							include_str!("resources/bpf/perf/tracepoint/alert.default.c")))),
+		AlertBehavior::None => code.replace("placeholder_of_perf_alert", ""),
+	};
+	// replace basic (entry, return, bpf_perf) placeholders last
+	code = code.replace("placeholder_of_bpf_perf", &sig_hash.to_output())
+			.replace("placeholder_of_entry_handler", &sig_hash.to_handle("entry_tracepoint"))
+			.replace("placeholder_of_return_handler", &sig_hash.to_handle("exit_tracepoint"));
+	println!("{}", code);
+	code
 }
 
 fn check_bpf_kprobe_override() -> bool {

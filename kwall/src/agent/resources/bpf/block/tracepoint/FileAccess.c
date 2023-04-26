@@ -20,10 +20,12 @@ struct counter_t {
 };
 
 BPF_HASH(counters, u32, struct counter_t);
+BPF_HASH(tracepoint_actions, u32, char);
 
 BPF_HASH(infotmp, u32, struct data_t);
 BPF_PERF_OUTPUT(placeholder_of_bpf_perf);
-int placeholder_of_entry_probe_handler(struct pt_regs *ctx, int dfd, const char __user *filename)
+
+int placeholder_of_entry_handler(struct tracepoint__syscalls__sys_enter_openat *args)
 {
 	u64 ts = bpf_ktime_get_boot_ns();
 	struct data_t data = {};
@@ -34,16 +36,17 @@ int placeholder_of_entry_probe_handler(struct pt_regs *ctx, int dfd, const char 
 	data.pid = pid;
 	data.ppid = ppid;
 	data.ret = 0; // this return value will be overriden
-	bpf_probe_read_str(&data.fname, sizeof(data.fname), filename);
+
+	const char *filename = (const char *)args->filename;
+	bpf_probe_read_user_str(&data.fname, sizeof(data.fname), (void *)filename);
 	bpf_probe_read_kernel(&data.comm, sizeof(data.comm), task->comm);
 	bpf_probe_read_kernel(&data.pcomm, sizeof(data.pcomm), task->real_parent->comm);
 	infotmp.update(&pid, &data);
 
-	// this will be based on the Alert type of the signature
 	placeholder_of_action
 	return 0;
 };
-int placeholder_of_return_probe_handler(struct pt_regs *ctx)
+int placeholder_of_return_handler(struct tracepoint__syscalls__sys_exit_openat *args)
 {
 	// we get just the pid instead of the whole task struct because
 	// the needed info is stored in the `infotmp` table
@@ -61,7 +64,7 @@ int placeholder_of_return_probe_handler(struct pt_regs *ctx)
 	data.ts = datap->ts;
 	data.pid = datap->pid;
 	data.ppid = datap->ppid;
-	data.ret = PT_REGS_RC(ctx);
+	data.ret = args->ret;
 	// this will be based on the Alert type of the signature
 	placeholder_of_perf_alert
 	infotmp.delete(&pid);

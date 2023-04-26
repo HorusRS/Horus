@@ -1,8 +1,9 @@
 [[signature]]
-name = "Anti writing"
+name = "Aslr inspection"
 alert = "Single"
-action = "None"
+action = "Kill"
+whitelist = ["cat"]
 
 [signature.data]
 type = "FileAccess"
-content = "/proc/sys/kernel/randomize_va_space"
+content = ["/proc/sys/kernel/randomize_va_space", "/killme"]

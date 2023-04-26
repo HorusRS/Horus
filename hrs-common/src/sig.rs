@@ -51,8 +51,8 @@ pub enum AlertBehavior {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "type", content = "content")]
 pub enum SignatureData {
-	Syscall(String),    // act on processes that run this systemcall
-	FileAccess(String), // "                   " access this file
+	Syscall(String),         // match processes that run this systemcall
+	FileAccess(Vec<String>), // "                  " access these files
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
