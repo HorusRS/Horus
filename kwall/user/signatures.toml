@@ -1,0 +1,8 @@
+[[signature]]
+name = "Anti writing"
+alert = "Single"
+action = "None"
+
+[signature.data]
+type = "FileAccess"
+content = "/proc/sys/kernel/randomize_va_space"
