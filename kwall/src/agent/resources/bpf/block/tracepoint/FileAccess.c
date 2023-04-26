@@ -16,7 +16,6 @@ struct data_t {
 };
 
 BPF_HASH(placeholder_of_count, u32, char);
-// BPF_HASH(tracepoint_actions, u32, char);
 BPF_HASH(placeholder_of_infotmp, u32, struct data_t);
 BPF_PERF_OUTPUT(placeholder_of_bpf_perf);
 

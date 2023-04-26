@@ -85,24 +85,6 @@ pub fn run_signature(sig_hash: &sig::SignatureHash, sig: &sig::SignatureEntry) {
 		SignatureData::FileAccess(fnames) => run_fileaccess_signature(sig_hash, sig, fnames), // fname -> file name
 	};
 }
-/*
-pub fn run_signature(sig_hash: &sig::SignatureHash, sig: &sig::SignatureEntry) {
-	match &sig.data {
-		SignatureData::Syscall(fname) => {
-			let sig_hash = sig_hash.clone();
-			let sig = sig.clone();
-			let fname = fname.clone();
-			thread::spawn(move || run_syscall_signature(&sig_hash, &sig, &fname));
-		}
-		SignatureData::FileAccess(fnames) => {
-			let sig_hash = sig_hash.clone();
-			let sig = sig.clone();
-			let fnames = fnames.clone();
-			thread::spawn(move || run_fileaccess_signature(&sig_hash, &sig, &fnames));
-		}
-	};
-}
-*/
 
 fn run_syscall_signature(sig_hash: &sig::SignatureHash, sig: &sig::SignatureEntry, fname: &str) {
 	let mut module = BPF::new(generate_bpf_for_syscall_signature(sig_hash, sig).as_str())
@@ -169,9 +151,9 @@ fn generate_callback_function(sig: &SignatureEntry) -> impl Fn() -> Box<dyn FnMu
 	let sig = sig.clone();
 	move || -> Box<dyn FnMut(&[u8]) + Send> {
 		let sig = sig.clone(); // move into the final function that will be used
-		Box::new( move |x| {
-			// This callback
-			let data = bytes_to_data::<general_data_t>(x);
+		Box::new( move |bytes_received| {
+			// This is the actual callback
+			let data = bytes_to_data::<general_data_t>(bytes_received);
 			let pcomm = bytes_to_string(&data.pcomm);
 			let comm = bytes_to_string(&data.comm);
 			let pcmdline = read_cmdline(data.ppid).unwrap_or_else(|_| pcomm.clone());
@@ -294,15 +276,12 @@ fn generate_bpf_for_fileaccess_signature(sig_hash: &SignatureHash, sig: &Signatu
 	// insert alert command based on alert type inside whitelist block
 	// replace action placeholder into an action placeholder placed inside whitelist
 	code = match &sig.action {
-		Action::Block => code.replace("placeholder_of_action",
-							&surround_in_whitelist_statement(&whitelist,
-							&surround_in_fileaccess_statement(&fileaccess,
-							include_str!("resources/bpf/action/tracepoint/block.c")))),
 		Action::Kill => code.replace("placeholder_of_action",
 							&surround_in_whitelist_statement(&whitelist,
 							&surround_in_fileaccess_statement(&fileaccess,
 							include_str!("resources/bpf/action/kill.c")))),
 		Action::Seccomp => code.replace("placeholder_of_action", ""), // seccomp isn't performed inside the eBPF
+		Action::Block => code.replace("placeholder_of_action", ""), // block isn't possible in tracepoints
 		Action::None => code.replace("placeholder_of_action", ""), // None will do nothing:)
 	};
 	code = match &sig.alert {
@@ -321,6 +300,7 @@ fn generate_bpf_for_fileaccess_signature(sig_hash: &SignatureHash, sig: &Signatu
 			.replace("placeholder_of_entry_handler", &sig_hash.to_handle("entry_tracepoint"))
 			.replace("placeholder_of_return_handler", &sig_hash.to_handle("exit_tracepoint"))
 			.replace("placeholder_of_infotmp", &sig_hash.to_handle("infotmp_table"))
+			.replace("placeholder_of_tracepoint_actions", &sig_hash.to_handle("actions_table"))
 			.replace("placeholder_of_count", &sig_hash.to_handle("count_table"));
 	println!("{}", code);
 	code

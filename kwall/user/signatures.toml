@@ -1,18 +1,18 @@
 [[signature]]
-name = "Anti writing"
+name = "ASLR Inspection - (!systemd)"
 alert = "Single"
 action = "Kill"
 whitelist = ["systemd", "bat"]
 
 [signature.data]
 type = "FileAccess"
-content = ["/proc/sys/kernel/randomize_va_space", "/killme"]
+content = ["/proc/sys/kernel/randomize_va_space"]
 
 [[signature]]
 name = "Anti debugging - tracing"
 alert = "Single"
 action = "Block"
-# whitelist = ["strace", "ltrace"]
+whitelist = ["strace"]
 
 [signature.data]
 type = "Syscall"
