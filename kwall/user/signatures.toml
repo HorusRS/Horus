@@ -2,7 +2,7 @@
 name = "ASLR Inspection - (!systemd)"
 alert = "Single"
 action = "Kill"
-whitelist = ["systemd", "bat"]
+whitelist = ["systemd", "sudo", "ps", ]
 
 [signature.data]
 type = "FileAccess"
@@ -12,7 +12,7 @@ content = ["/proc/sys/kernel/randomize_va_space"]
 name = "Anti debugging - tracing"
 alert = "Single"
 action = "Block"
-whitelist = ["strace"]
+whitelist = ["strace", ]
 
 [signature.data]
 type = "Syscall"

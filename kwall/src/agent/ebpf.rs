@@ -169,10 +169,10 @@ fn generate_callback_function(sig: &SignatureEntry) -> impl Fn() -> Box<dyn FnMu
 				pcomm
 			};
 
-			let entry = format!("{} {} => {}",
-								format!("[{:-25} | {:-25}]", sig.name, get_real_datetime(data.ts)).truecolor(128, 128, 128),
-								format!("{:-7} -> {:-20}", data.ppid, pcommand).blue(),
-								format!("{:-7} -> {:-20}", data.pid, command).red(),
+			let entry = format!("{:55} {} => {}",
+								format!("[ {} | {} ]", sig.name, get_real_datetime(data.ts)).truecolor(128, 128, 128),
+								format!("{:-7} -> {:-30}", data.ppid, pcommand).blue(),
+								format!("{:-7} -> {:-30}", data.pid, command).red(),
 								);
 
 			println!("{}", entry);
@@ -264,7 +264,6 @@ fn generate_bpf_for_syscall_signature(sig_hash: &SignatureHash, sig: &SignatureE
 			.replace("placeholder_of_return_handler", &sig_hash.to_handle("kretprobe"))
 			.replace("placeholder_of_infotmp", &sig_hash.to_handle("infotmp_table"))
 			.replace("placeholder_of_count", &sig_hash.to_handle("count_table"));
-	println!("{}", code);
 	code
 }
 
@@ -302,7 +301,6 @@ fn generate_bpf_for_fileaccess_signature(sig_hash: &SignatureHash, sig: &Signatu
 			.replace("placeholder_of_infotmp", &sig_hash.to_handle("infotmp_table"))
 			.replace("placeholder_of_tracepoint_actions", &sig_hash.to_handle("actions_table"))
 			.replace("placeholder_of_count", &sig_hash.to_handle("count_table"));
-	println!("{}", code);
 	code
 }
 
