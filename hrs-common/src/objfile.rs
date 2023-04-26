@@ -9,7 +9,7 @@ use {
 	serde_json,
 };
 
-pub enum ObjFileFormat {
+pub enum Format {
 	Toml,
 	Json,
 }
@@ -32,7 +32,7 @@ impl std::fmt::Display for ObjFileError {
 }
 
 // loads wanted objects from file
-pub fn load<T>(path: &str, format: ObjFileFormat) -> Result<T, ObjFileError>
+pub fn load<T>(path: &str, format: Format) -> Result<T, ObjFileError>
 where for<'a> T: Deserialize<'a>
 {
 	let file_str = match fs::read_to_string(path) {
@@ -42,7 +42,7 @@ where for<'a> T: Deserialize<'a>
 		}
 	};
 	let data = match format {
-		ObjFileFormat::Toml => {
+		Format::Toml => {
 			match toml::from_str(&file_str) {
 				Ok(c) => c,
 				Err(_) => {
@@ -50,7 +50,7 @@ where for<'a> T: Deserialize<'a>
 				}
 			}
 		}
-		ObjFileFormat::Json => {
+		Format::Json => {
 			match serde_json::from_str(&file_str) {
 				Ok(c) => c,
 				Err(_) => {
@@ -62,11 +62,11 @@ where for<'a> T: Deserialize<'a>
 	Ok(data)
 }
 
-pub fn write<T>(data: &T, path: &str, format: ObjFileFormat) -> Result<(), ObjFileError>
+pub fn write<T>(data: &T, path: &str, format: Format) -> Result<(), ObjFileError>
 where T: Serialize,
 {
 	let data_str = match format {
-		ObjFileFormat::Toml => {
+		Format::Toml => {
 			match toml::to_string(&data) {
 				Ok(c) => c,
 				Err(_) => {
@@ -74,7 +74,7 @@ where T: Serialize,
 				}
 			}
 		}
-		ObjFileFormat::Json => {
+		Format::Json => {
 			match serde_json::to_string(&data) {
 				Ok(c) => c,
 				Err(_) => {

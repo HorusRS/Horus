@@ -1,9 +1,0 @@
-[[signature]]
-_name = "Anti debugging - tracing"
-_type = "systemcalls.single.basic"
-_data = "ptrace"
-
-[[signature]]
-_name = "Testing print loop"
-_type = "systemcalls.single.basic"
-_data = "kill"

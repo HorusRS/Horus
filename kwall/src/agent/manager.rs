@@ -21,16 +21,13 @@ impl Manager {
 
 		// init signatures hash map
 		let mut sig_map = HashMap::new();
-		match sig::load_signatures("config/signatures.toml") {
+		match sig::load_signatures("user/signatures.toml") {
 			Ok(signatures) => {
-				for s in signatures{
-					sig_map.insert(sig::hash(&s._name), s);
+				for s in signatures {
+					sig_map.insert(sig::hash(&s.name), s);
 				}
 			},
-			Err(e) => {
-				println!("{}",e);
-				// no signatures added due to the failure
-			}
+			Err(e) => eprintln!("{}",e), // no signatures added due to the failure
 		}
 
 		Self {
@@ -39,12 +36,13 @@ impl Manager {
 		}
 	}
 
-	pub fn prompt(&mut self) {
+	pub fn prompt(&self) {
 		println!("Horus agent will start after this prompt:\n");
 		println!("Loaded {} signatures", self.signatures.len());
 		println!("{:?}", self.signatures);
-		match self.tracer.run_signatures(&self.signatures) {
-			_ => print!(""),
-		};
+	}
+
+	pub fn load(&mut self) {
+		self.tracer.load_signatures(&self.signatures)
 	}
 }

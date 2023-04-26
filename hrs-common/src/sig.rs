@@ -34,32 +34,41 @@ impl Hash for SignatureHash {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub enum ProcessAction {
-	Kill,
-	Secomp,
+pub enum Action {
+	Kill, // kill the process catched by this signature
+	Seccomp, // move the process into seccomp
+	Block, // block the specific action catched by the signature
+	None, // Do nothing. in cases you just want to get alerted:)
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum AlertBehavior {
 	Standard,
+	Single,
 	None,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "type", content = "content")]
 pub enum SignatureData {
-	Syscall(String),
+	Syscall(String),         // match processes that run this systemcall
+	FileAccess(Vec<String>), // "                  " access these files
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SignatureEntry {
 	pub name: String,
-	pub action: ProcessAction,
+	#[serde(default = "default_action")]
+	pub action: Action,
 	#[serde(default = "default_alert")]
 	pub alert: AlertBehavior,
 	pub data: SignatureData,
 	#[serde(default = "default_whitelist")]
 	pub whitelist: Option<Vec<Program>>,
+}
+
+fn default_action() -> Action {
+	Action::None
 }
 
 fn default_alert() -> AlertBehavior {
@@ -75,7 +84,7 @@ struct FileContents {
 }
 
 pub fn load_signatures(path: &str) -> Result<Vec<SignatureEntry>, objfile::ObjFileError> {
-	let data = objfile::load::<FileContents>(path, objfile::ObjFileFormat::Toml)?;
+	let data = objfile::load::<FileContents>(path, objfile::Format::Toml)?;
 	Ok(data.signature)
 }
 
@@ -83,5 +92,5 @@ pub fn write_signatures(signature: Vec<SignatureEntry>, path: &str) -> Result<()
 	let data = FileContents {
 		signature,
 	};
-	objfile::write::<FileContents>(&data, path, objfile::ObjFileFormat::Toml)
+	objfile::write::<FileContents>(&data, path, objfile::Format::Toml)
 }
