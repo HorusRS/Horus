@@ -11,6 +11,7 @@ use {
 		},
 	},
 	std::{
+		env,
 		sync::{
 			Arc,
 			Mutex,
@@ -191,9 +192,15 @@ fn generate_callback_function(sig: &SignatureEntry) -> impl Fn() -> Box<dyn FnMu
 								format!("{:-7} -> {:-30}", data.ppid, pcommand).blue(),
 								format!("{:-7} -> {:-30}", data.pid, command).red(),
 								);
+
 			if *CONNECT_TO_SERVER.read().unwrap() {
+				let hostname = match env::var("HOSTNAME") {
+					Ok(v) => v,
+					Err(_) => String::from("default-hostname"),
+				};
 				let alert = AlertEntry {
-					name: sig.name.clone(),
+					signature_name: sig.name.clone(),
+					hostname: hostname,
 					threat_level: sig.threat_level,
 					parent_program: pcommand.clone(),
 					program: command.clone(),

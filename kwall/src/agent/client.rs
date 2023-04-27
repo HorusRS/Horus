@@ -1,15 +1,15 @@
 // client.rs
-use reqwest::blocking::Client;
-use serde::{Deserialize, Serialize};
-use std::fs;
+use {
+	std::fs,
+	serde::{
+		Deserialize,
+		Serialize,
+	},
+	reqwest::blocking::Client,
+};
 
 use {
 	hrs_common::{
-		messages,
-		messages::{
-			ServerMessage,
-			ClientMessage,
-		},
 		alert,
 		alert::{
 			AlertEntry,

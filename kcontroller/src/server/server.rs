@@ -1,10 +1,23 @@
-// server.rs
-use hyper::{Body, Request, Response, Server, StatusCode};
-use hyper::service::{make_service_fn, service_fn};
-use hyper::header::CONTENT_TYPE;
-use serde_json::json;
-use std::convert::Infallible;
-use serde::{Deserialize, Serialize};
+use {
+	hyper::{
+		Body,
+		Request,
+		Response,
+		Server,
+		StatusCode,
+	};
+	hyper::service::{
+		make_service_fn,
+		service_fn
+	};
+	hyper::header::CONTENT_TYPE;
+	serde_json::json;
+	std::convert::Infallible;
+	serde::{
+		Deserialize,
+		Serialize
+	};
+};
 
 use {
 	hrs_common::{

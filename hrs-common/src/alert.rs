@@ -9,7 +9,8 @@ use super::program::{
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AlertEntry {
-	pub name: String,
+	pub signature_name: String,
+	pub hostname: String,
 	pub threat_level: u8,
 	pub parent_program: Program,
 	pub program: Program,
