@@ -21,7 +21,7 @@ impl FromStr for RunMode {
 		}
 	}
 }
-#[actix_web::main]
+#[tokio::main]
 async fn main(){
 	let matches = Command::new("kwall")
 		.about("Horus's server:
@@ -34,29 +34,12 @@ on any machine, this is still a work in progress:) \
 		.subcommand(
 			Command::new("run")
 				.about("Run server")
-				.arg(
-					Arg::new("mode")
-						.value_name("MODE/STATE")
-						.value_parser(["local", "full"])
-						.help("Select the run mode: 'local' or 'full'")
-						.default_value("local"),
-				),
 		)
 		.get_matches();
 
 	if let Some(matches) = matches.subcommand_matches("run") {
-		let mode_str = matches.get_one::<String>("mode").unwrap();
-		let mode = mode_str.parse::<RunMode>().unwrap();
-		match mode {
-			RunMode::Local => {
-				let mut manager = server::Manager::new();
-				manager.prompt();
-                let protocol = server::Protocol::new(8000);
-                protocol.start().await;
-			}
-			RunMode::Full => {
-				todo!();
-			}
-		}
+		let mut manager = server::Manager::new();
+		manager.prompt();
+		manager.start().await;
 	}
 }

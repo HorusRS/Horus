@@ -1,5 +1,4 @@
 #![allow(dead_code)]
-mod protocol;
+mod server;
 mod manager;
 pub use manager::Manager;
-pub use protocol::Protocol;

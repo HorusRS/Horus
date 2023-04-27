@@ -4,9 +4,11 @@ use {
 };
 
 // local mods
-use super::objfile;
-use super::program::{
-	Program
+use super::{
+	objfile,
+	program::{
+		Program
+	},
 };
 
 pub type SignatureHash = String;
@@ -57,20 +59,26 @@ pub enum SignatureData {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SignatureEntry {
+	// no default, needed.
 	pub name: String,
+	#[serde(default = "default_threat")]
+	pub threat_level: u8,
 	#[serde(default = "default_action")]
 	pub action: Action,
 	#[serde(default = "default_alert")]
 	pub alert: AlertBehavior,
-	pub data: SignatureData,
 	#[serde(default = "default_whitelist")]
 	pub whitelist: Option<Vec<Program>>,
+	// no default, needed.
+	pub data: SignatureData,
 }
 
+fn default_threat() -> u8 {
+	0
+}
 fn default_action() -> Action {
 	Action::None
 }
-
 fn default_alert() -> AlertBehavior {
 	AlertBehavior::Standard
 }

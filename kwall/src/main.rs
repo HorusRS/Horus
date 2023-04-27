@@ -1,9 +1,12 @@
 use {
 	clap::{Arg, Command},
 	std::str::FromStr,
+	lazy_static::lazy_static,
 };
 
 mod agent;
+use agent::globals;
+use agent::globals::CONNECT_TO_SERVER;
 
 enum RunMode {
 	Serverless,
@@ -56,7 +59,15 @@ on any machine, this is still a work in progress:) \
 				}
 			}
 			RunMode::Full => {
-				todo!();
+				{
+					let mut value = CONNECT_TO_SERVER.write().unwrap();
+					*value = true;
+				}
+				let mut manager = agent::Manager::new();
+				manager.prompt();
+				manager.load();
+				loop {
+				}
 			}
 		}
 	}

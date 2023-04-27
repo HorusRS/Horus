@@ -43,7 +43,10 @@ use {
 	},
 };
 
+// local
 use {
+	super::client,
+	super::globals::CONNECT_TO_SERVER,
 	hrs_common::{
 		sig,
 		sig::{
@@ -53,6 +56,10 @@ use {
 			SignatureData,
 			Action,
 			AlertBehavior,
+		},
+		alert,
+		alert::{
+			AlertEntry,
 		},
 	},
 };
@@ -174,11 +181,26 @@ fn generate_callback_function(sig: &SignatureEntry) -> impl Fn() -> Box<dyn FnMu
 				pcomm
 			};
 
-			let entry = format!("{:55} {} => {}",
-								format!("[ {} | {} ]", sig.name, get_real_datetime(data.ts)).truecolor(128, 128, 128),
+			let timestamp = get_real_datetime(data.ts);
+			// time format is ISO-8601: %Y-%m-%dT%H:%M:%S%z (e.g. "2023-04-26T10:30:00-0700")
+			let datetime = timestamp.format("%Y-%m-%dT%H:%M:%S%z").to_string();
+
+			let entry = format!("{}{:60} {} => {}",
+								format!("({})", sig.threat_level).truecolor(128, 128, 128),
+								format!("[ {} | {} ]", sig.name, datetime).truecolor(128, 128, 128),
 								format!("{:-7} -> {:-30}", data.ppid, pcommand).blue(),
 								format!("{:-7} -> {:-30}", data.pid, command).red(),
 								);
+			if *CONNECT_TO_SERVER.read().unwrap() {
+				let alert = AlertEntry {
+					name: sig.name.clone(),
+					threat_level: sig.threat_level,
+					parent_program: pcommand.clone(),
+					program: command.clone(),
+					datetime: datetime.clone(),
+				};
+				client::send_log(alert);
+			}
 
 			println!("{}", entry);
 			if let SignatureData::Syscall(syscall) = &sig.data {
@@ -342,7 +364,7 @@ fn inject_seccomp(fname: &str, pid: Pid) -> Result<(), Box<dyn std::error::Error
 	Ok(())
 }
 
-fn get_real_datetime(ts: u64) -> String {
+fn get_real_datetime(ts: u64) -> DateTime<chrono::Local> {
 	lazy_static! {
 		static ref BOOT_TIME: DateTime<chrono::Utc> = get_boot_time();
 	}
@@ -350,7 +372,7 @@ fn get_real_datetime(ts: u64) -> String {
 	let ts_in_ms = ts / 1_000_000;
 	let timestamp = BOOT_TIME.with_timezone(&chrono::Local) + chrono::Duration::milliseconds(ts_in_ms as i64);
 	// time format is ISO-8601: %Y-%m-%dT%H:%M:%S%z (e.g. "2023-04-26T10:30:00-0700")
-	timestamp.format("%Y-%m-%dT%H:%M:%S%z").to_string()
+	timestamp
 }
 
 fn get_boot_time() -> DateTime<Utc> {

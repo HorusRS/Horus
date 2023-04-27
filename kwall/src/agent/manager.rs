@@ -5,7 +5,9 @@ use {
 };
 
 use {
+	super::globals::CONNECT_TO_SERVER,
 	super::tracer,
+	super::client,
 	hrs_common::{
 		sig,
 	},
@@ -20,6 +22,10 @@ impl Manager {
 
 		// init signatures hash map
 		let mut sig_map = HashMap::new();
+		let connect = *CONNECT_TO_SERVER.read().unwrap();
+		if connect {
+			client::update_signatures();
+		}
 		match sig::load_signatures("user/signatures.toml") {
 			Ok(signatures) => {
 				for s in signatures {

@@ -13,14 +13,15 @@ protocol = "sparse" # will become the default from rust v1.70
 
 [dependencies]
 hrs-common = { version = "0.1.0", path = "../hrs-common" } # the *local* common crate for both agent and server
+tokio = { version = "1.14", features = ["full"] }
+tokio-tungstenite = "0.15"
+futures = "0.3"
 serde = { version = "1.0", features = ["derive"] }
-actix-web = "4.3.1"
+serde_json = "1.0"
 clap = "4.2.2"
 toml = "0.7.3"
-reqwest = "0.11.3"
-actix-rt = "2.0.0"
-thiserror = "1.0.40"
-tokio = "1.27.0"
+hyper = { version = "0.14", features = ["full"] }
+reqwest = { version = "0.11", features = ["json"] }
 
 [features]
 
