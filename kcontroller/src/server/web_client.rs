@@ -12,9 +12,9 @@ use {
 	},
 };
 
-pub fn send_log(log_message: AlertEntry) {
+pub fn send_log_to_elk(log_message: AlertEntry) {
 	let client = Client::new();
-	let url = "http://127.0.0.1:8080/log";
+	let url = "http://127.0.0.1:9200/alert-entries/_doc";
 	let response = client.post(url)
 		.header("Content-Type", "application/json")
 		.body(serde_json::to_string(&log_message).unwrap())

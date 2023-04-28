@@ -5,27 +5,23 @@ use {
 		Response,
 		Server,
 		StatusCode,
-	};
+	},
 	hyper::service::{
 		make_service_fn,
 		service_fn
-	};
-	hyper::header::CONTENT_TYPE;
-	serde_json::json;
-	std::convert::Infallible;
+	},
+	hyper::header::CONTENT_TYPE,
+	serde_json::json,
+	std::convert::Infallible,
 	serde::{
 		Deserialize,
 		Serialize
-	};
+	},
 };
 
 use {
+	super::web_client,
 	hrs_common::{
-		messages,
-		messages::{
-			ServerMessage,
-			ClientMessage,
-		},
 		alert,
 		alert::{
 			AlertEntry,
@@ -57,7 +53,8 @@ async fn handle_request(req: Request<Body>) -> Result<Response<Body>, Infallible
 			let log_message: AlertEntry = serde_json::from_slice(&body_bytes).unwrap();
 
 			println!("Received log: - {:?}", log_message);
-			// Store log_message somewhere (e.g., in a database or a file)
+			// Store log_message somewhere (e.g., in an ELK db)
+			web_client::send_log_to_elk(log_message);
 
 			*response.body_mut() = Body::from(json!({"status": "ok"}).to_string());
 			*response.headers_mut() = hyper::header::HeaderMap::new();

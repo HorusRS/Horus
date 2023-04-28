@@ -1,5 +1,5 @@
 [[signature]]
-name = "ASLR Inspection - (from server)"
+name = "ASLR Inspection"
 alert = "Single"
 action = "Kill"
 whitelist = ["systemd", "sudo", "ps", ]
