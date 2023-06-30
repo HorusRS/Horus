@@ -7,7 +7,6 @@ a low-overhead in-kernel virtual machine, and the Rust programming language.
 This project will result in a tool that will allow you to block certain actions on your systems.
 Some are dangerous like tracing programs and fileless execution, Some are stupid like running `rm -rf .` when you are in your home directory (true story)
 Think of it as a firewall on the kernel level. you're welcome!
-* Want to use? you'll need to wait..
 
 # How to run?
 - run kwall?
