@@ -11,7 +11,7 @@ In today's digital landscape, ensuring the security and integrity of your system
 
 Horus provides a wide array of features, including:
 
-- **Granular Control:** Block potentially dangerous actions such as tracing programs or executing fileless attacks, some are stupid like running rm -rf . when you are in your home directory (true story
+- **Granular Control:** Block potentially dangerous actions such as tracing programs or executing fileless attacks, some are stupid like running `rm -rf`. when you are in your home directory (true story)
 
 - **Kernel-Level Firewall:** Think of Horus as a firewall for your kernel. It actively protects your system against unauthorized or harmful actions, offering a robust defense mechanism.
 
